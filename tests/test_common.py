@@ -1,4 +1,4 @@
-from taqc_dataset_lib.dataset.common import ShotInfo
+from taqc.dataset import ShotInfo
 
 
 def test_shotinfo():

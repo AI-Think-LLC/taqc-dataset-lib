@@ -1,7 +1,7 @@
 [project]
-name = "taqc-dataset-lib"
+name = "taqc"
 version = "0.1.0"
-description = "Default template for PDM package"
+description = ""
 authors = [
     {name = "Day Tripper", email = "kekovdom@gmail.com"},
 ]

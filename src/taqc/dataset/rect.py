@@ -57,6 +57,12 @@ class Rect(NamedTuple):
     def toCocoBounds(self) -> tuple[int, int, int, int]:
         return (self.lt.x, self.lt.y, self.size.width, self.size.height)
 
+    def __or__(self, other: "Rect") -> "Rect":
+        return Rect(
+            Point(min(self.lt.x, other.lt.x), min(self.lt.y, other.lt.y)),
+            Point(max(self.rb.x, other.rb.x), max(self.rb.y, other.rb.y)),
+        )
+
     @staticmethod
     def parseRelative(string: str, imageSize: tuple[int, int]) -> Option["Rect"]:
         parts = string.split(" ")
@@ -72,13 +78,19 @@ class Rect(NamedTuple):
         return Rect(lt, Point(lt.x + size.width, lt.y + size.height))
 
 
-@dataclass
+@dataclass(frozen=True)
 class Object:
     box: Rect
     category: int
 
     def updateRect(self, updater: Callable[[Rect], Rect]) -> "Object":
         return Object(updater(self.box), self.category)
+
+    def merge(self, other: "Object") -> Option["Object"]:
+        if self.category != other.category or not self.box.overlaps(other.box):
+            return Nothing
+
+        return Some(Object(self.box | other.box, self.category))
 
     @staticmethod
     @effect.option()

@@ -4,6 +4,7 @@ import os
 from random import randint
 from typing import Container, Iterable
 from PIL import Image, ImageDraw
+from expression import Option
 from expression.collections import Block, Seq
 from more_itertools import take
 from .rect import rndCropIncludingRect
@@ -96,3 +97,38 @@ class Sample:
                 "id": take(len(self.objects), idsIter),
             },
         }
+
+    def dedupe(self) -> "Sample":
+        result: list[Object] = []
+        for obj in self.objects:
+            merged = False
+            for i, existing_obj in enumerate(result):
+                match obj.merge(existing_obj):
+                    case Option(tag="some", some=merged_obj):
+                        result[i] = merged_obj
+                        merged = True
+                        break
+
+            if not merged:
+                result.append(obj)
+
+        return dataclasses.replace(self, objects=Block(result))
+
+    def count_false(self, trueObjects: Iterable[Object]):
+        """возвращает кортеж FN и FP"""
+
+        overlapped: set[Object] = set()
+
+        def detected(obj: Object):
+            for predicted in self.objects:
+                if predicted.category == obj.category and predicted.box.overlaps(
+                    obj.box
+                ):
+                    overlapped.add(predicted)
+                    return True
+            return False
+
+        falseNegative = sum(1 for obj in trueObjects if not detected(obj))
+        falsePositive = sum(1 for obj in self.objects if obj not in overlapped)
+
+        return (falseNegative, falsePositive)
