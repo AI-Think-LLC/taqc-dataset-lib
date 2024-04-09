@@ -1,2 +1,2 @@
-from rect import Rect
-from common import Size, ShotInfo, Point, Object
+from .rect import Rect, Object
+from .common import Size, ShotInfo, Point

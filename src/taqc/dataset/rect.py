@@ -1,7 +1,8 @@
-from typing import NamedTuple
-from expression import Nothing, Option, Some
-from expression.collections import Seq
-from .common import Point, Size, convert_coords
+from dataclasses import dataclass
+from typing import Callable, NamedTuple
+from expression import Nothing, Option, Some, effect
+from expression.collections import Seq, Block
+from .common import Point, Size, convert_coords, rndWinPos, CropBox
 
 
 class Rect(NamedTuple):
@@ -69,3 +70,29 @@ class Rect(NamedTuple):
     @staticmethod
     def fromSize(lt: Point, size: Size) -> "Rect":
         return Rect(lt, Point(lt.x + size.width, lt.y + size.height))
+
+
+@dataclass
+class Object:
+    box: Rect
+    category: int
+
+    def updateRect(self, updater: Callable[[Rect], Rect]) -> "Object":
+        return Object(updater(self.box), self.category)
+
+    @staticmethod
+    @effect.option()
+    def parse(string: str, imageSize: tuple[int, int]):
+        category = yield from Block(string.split(" ")).try_head()
+        rect = yield from Rect.parseRelative(string, imageSize)
+
+        return Object(rect, int(category))
+
+
+@effect.option[CropBox]()  # type: ignore
+def rndCropIncludingRect(imageSize: Size, rect: Rect, winSize: Size):
+    x = yield from rndWinPos(imageSize.width, rect.lt.x, rect.size.width, winSize.width)
+    y = yield from rndWinPos(
+        imageSize.height, rect.lt.y, rect.size.height, winSize.height
+    )
+    return (x, y, x + winSize.width, y + winSize.height)

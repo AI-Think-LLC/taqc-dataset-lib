@@ -6,8 +6,8 @@ from typing import Container, Iterable
 from PIL import Image, ImageDraw
 from expression.collections import Block, Seq
 from more_itertools import take
-from .common import rndCropIncludingRect
-from . import Object, Rect, Point, Size
+from .rect import rndCropIncludingRect
+from . import Rect, Point, Size, Object
 
 
 @dataclass

@@ -1,11 +1,7 @@
-from dataclasses import dataclass
 from random import randint
 import re
-from typing import Callable, Literal, NamedTuple
+from typing import Literal, NamedTuple
 from expression import Nothing, Option, Some, effect, option
-from expression.collections import Block
-
-from .rect import Rect
 
 
 class Size(NamedTuple):
@@ -24,27 +20,10 @@ class ShotInfo(NamedTuple):
     _filenamePattern = re.compile(r"^.*_c(\d)(?:_Ткань)?_(.*)\.jpg$")
 
     @staticmethod
-    @effect.option()
+    @effect.option["ShotInfo"]()  # type: ignore
     def fromFilename(filename: str):
         m = yield from option.of_optional(ShotInfo._filenamePattern.match(filename))
         return ShotInfo(int(m.group(1)), m.group(2))  # type: ignore
-
-
-@dataclass
-class Object:
-    box: Rect
-    category: int
-
-    def updateRect(self, updater: Callable[[Rect], Rect]) -> "Object":
-        return Object(updater(self.box), self.category)
-
-    @staticmethod
-    @effect.option()
-    def parse(string: str, imageSize: tuple[int, int]):
-        category = yield from Block(string.split(" ")).try_head()
-        rect = yield from Rect.parseRelative(string, imageSize)
-
-        return Object(rect, int(category))
 
 
 class Point(NamedTuple):
@@ -97,12 +76,3 @@ def rndWinPos(imageSize: int, objPos: int, objSize: int, winSize: int) -> Option
     start = max(0, (objPos + objSize) - winSize)
     end = min(imageSize - winSize, objPos)
     return Some(randint(start, end)) if start < end else Nothing
-
-
-@effect.option[CropBox]()  # type: ignore
-def rndCropIncludingRect(imageSize: Size, rect: Rect, winSize: Size):
-    x = yield from rndWinPos(imageSize.width, rect.lt.x, rect.size.width, winSize.width)
-    y = yield from rndWinPos(
-        imageSize.height, rect.lt.y, rect.size.height, winSize.height
-    )
-    return (x, y, x + winSize.width, y + winSize.height)
