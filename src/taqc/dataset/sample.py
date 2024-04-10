@@ -4,7 +4,7 @@ import os
 from random import randint
 from typing import Container, Iterable
 from PIL import Image, ImageDraw
-from expression import Option
+from expression import Option, Some
 from expression.collections import Block, Seq
 from more_itertools import take
 from .rect import rndCropIncludingRect
@@ -104,7 +104,7 @@ class Sample:
             merged = False
             for i, existing_obj in enumerate(result):
                 match obj.merge(existing_obj):
-                    case Option(tag="some", some=merged_obj):
+                    case Some(merged_obj):
                         result[i] = merged_obj
                         merged = True
                         break
