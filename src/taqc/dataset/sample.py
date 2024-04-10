@@ -36,7 +36,7 @@ class Sample:
         image_copy = self.image.copy()
         draw = ImageDraw.Draw(image_copy)
         for obj in self.objects:
-            draw.rectangle([*obj.box.lt, *obj.box.rb], outline="red")
+            draw.rectangle((*obj.box.lt, *obj.box.rb), outline="red")  # type: ignore
         return image_copy
 
     def crop(self, cropBox: tuple[int, int, int, int]):

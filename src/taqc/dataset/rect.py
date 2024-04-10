@@ -1,8 +1,14 @@
 from dataclasses import dataclass
-from typing import Callable, NamedTuple
+from typing import Any, Callable, Iterable, NamedTuple, Protocol, TypedDict
 from expression import Nothing, Option, Some, effect
 from expression.collections import Seq, Block
 from .common import Point, Size, convert_coords, rndWinPos, CropBox
+
+
+class TFTensor(Iterable[float], Protocol):
+    def item(self) -> float: ...
+    def tolist(self) -> list[float]: ...
+    def __getitem__(self, any) -> "TFTensor": ...
 
 
 class Rect(NamedTuple):
@@ -77,6 +83,14 @@ class Rect(NamedTuple):
     def fromSize(lt: Point, size: Size) -> "Rect":
         return Rect(lt, Point(lt.x + size.width, lt.y + size.height))
 
+    @staticmethod
+    def fromTfTensor(tfTensor: TFTensor) -> "Rect":
+        coords = tuple(int(x) for x in tfTensor[:4])
+        return Rect(
+            Point(*coords[:2]),
+            Point(*coords[2:]),
+        )
+
 
 @dataclass(frozen=True)
 class Object:
@@ -108,3 +122,10 @@ def rndCropIncludingRect(imageSize: Size, rect: Rect, winSize: Size):
         imageSize.height, rect.lt.y, rect.size.height, winSize.height
     )
     return (x, y, x + winSize.width, y + winSize.height)
+
+
+def objects_from_ann(ann: Any):
+    return tuple(
+        Object(category=category, box=Rect.fromSize(Point(*box[:2]), Size(*box[2:])))
+        for box, category in zip(ann["objects"]["bbox"], ann["objects"]["category"])
+    )
