@@ -7,8 +7,8 @@ from PIL import Image, ImageDraw
 from expression import Option, Some
 from expression.collections import Block, Seq
 from more_itertools import take
-from .rect import rndCropIncludingRect
-from . import Rect, Point, Size, Object
+from .rect import rndCropIncludingRect, Rect, Object
+from .common import Point, Size
 
 
 @dataclass
@@ -33,10 +33,12 @@ class Sample:
         )
 
     def displayRects(self):
+        outlines = ("red", "blue", "green")
+
         image_copy = self.image.copy()
         draw = ImageDraw.Draw(image_copy)
         for obj in self.objects:
-            draw.rectangle((*obj.box.lt, *obj.box.rb), outline="red")  # type: ignore
+            draw.rectangle((*obj.box.lt, *obj.box.rb), outline=outlines[obj.category])  # type: ignore
         return image_copy
 
     def crop(self, cropBox: tuple[int, int, int, int]):
@@ -131,4 +133,4 @@ class Sample:
         falseNegative = sum(1 for obj in trueObjects if not detected(obj))
         falsePositive = sum(1 for obj in self.objects if obj not in overlapped)
 
-        return (falseNegative, falsePositive)
+        return falseNegative, falsePositive
