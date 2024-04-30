@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, NamedTuple, Protocol, TypedDict
+from typing import Any, Callable, Iterable, NamedTuple, Protocol, TypedDict, Container, Sequence
 from expression import Nothing, Option, Some, effect
 from expression.collections import Seq, Block
 from .common import Point, Size, convert_coords, rndWinPos, CropBox
@@ -7,7 +7,9 @@ from .common import Point, Size, convert_coords, rndWinPos, CropBox
 
 class TFTensor(Iterable[float], Protocol):
     def item(self) -> float: ...
+
     def tolist(self) -> list[float]: ...
+
     def __getitem__(self, any) -> "TFTensor": ...
 
 
@@ -28,11 +30,11 @@ class Rect(NamedTuple):
         return Size(self.rb.x - self.lt.x, self.rb.y - self.lt.y)
 
     def toTuple(self):
-        return (*self.lt, *self.rb)
+        return *self.lt, *self.rb
 
     def contain(self, point: Point):
         return (self.lt.x <= point.x <= self.rb.x) and (
-            self.lt.y <= point.y <= self.rb.y
+                self.lt.y <= point.y <= self.rb.y
         )
 
     def overlaps(self, rhs: "Rect"):
@@ -61,7 +63,10 @@ class Rect(NamedTuple):
         return Some(newRect)
 
     def toCocoBounds(self) -> tuple[int, int, int, int]:
-        return (self.lt.x, self.lt.y, self.size.width, self.size.height)
+        return self.lt.x, self.lt.y, self.size.width, self.size.height
+
+    def toPostgresBox(self):
+        return f"({self.lt.x}, {self.lt.y}), ({self.rb.x}, {self.rb.y})"
 
     def __or__(self, other: "Rect") -> "Rect":
         return Rect(
@@ -82,6 +87,15 @@ class Rect(NamedTuple):
     @staticmethod
     def fromSize(lt: Point, size: Size) -> "Rect":
         return Rect(lt, Point(lt.x + size.width, lt.y + size.height))
+
+    @staticmethod
+    def fromCoco(bounds: Sequence[int]):
+        w: int = bounds[2]
+        h: int = bounds[3]
+        x: int = bounds[0] - w // 2
+        y: int = bounds[1] - h // 2
+
+        return Rect(Point(x, x + w), Point(y, y + h))
 
     @staticmethod
     def fromTfTensor(tfTensor: TFTensor) -> "Rect":
@@ -114,14 +128,22 @@ class Object:
 
         return Object(rect, int(category))
 
+    def toDb(self, roll_id: str, meter: float, categories: Sequence[str] = ("common", "misc", "stripe")):
+        return {
+            "meter": meter,
+            "roll_id": roll_id,
+            "category": categories[self.category],
+            "box": self.box.toPostgresBox()
+        }
 
-@effect.option[CropBox]()  # type: ignore
+
+@effect.option[CropBox]()
 def rndCropIncludingRect(imageSize: Size, rect: Rect, winSize: Size):
     x = yield from rndWinPos(imageSize.width, rect.lt.x, rect.size.width, winSize.width)
     y = yield from rndWinPos(
         imageSize.height, rect.lt.y, rect.size.height, winSize.height
     )
-    return (x, y, x + winSize.width, y + winSize.height)
+    return x, y, x + winSize.width, y + winSize.height
 
 
 def objects_from_ann(ann: Any):

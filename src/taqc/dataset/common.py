@@ -20,7 +20,7 @@ class ShotInfo(NamedTuple):
     _filenamePattern = re.compile(r"^.*_c(\d)(?:_Ткань)?_(.*)\.jpg$")
 
     @staticmethod
-    @effect.option["ShotInfo"]()  # type: ignore
+    @effect.option["ShotInfo"]()
     def fromFilename(filename: str):
         m = yield from option.of_optional(ShotInfo._filenamePattern.match(filename))
         return ShotInfo(int(m.group(1)), m.group(2))  # type: ignore
