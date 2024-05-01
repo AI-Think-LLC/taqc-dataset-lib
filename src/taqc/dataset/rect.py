@@ -1,5 +1,14 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, NamedTuple, Protocol, TypedDict, Container, Sequence
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    NamedTuple,
+    Protocol,
+    TypedDict,
+    Container,
+    Sequence,
+)
 from expression import Nothing, Option, Some, effect
 from expression.collections import Seq, Block
 from .common import Point, Size, convert_coords, rndWinPos, CropBox
@@ -34,7 +43,7 @@ class Rect(NamedTuple):
 
     def contain(self, point: Point):
         return (self.lt.x <= point.x <= self.rb.x) and (
-                self.lt.y <= point.y <= self.rb.y
+            self.lt.y <= point.y <= self.rb.y
         )
 
     def overlaps(self, rhs: "Rect"):
@@ -73,6 +82,12 @@ class Rect(NamedTuple):
             Point(min(self.lt.x, other.lt.x), min(self.lt.y, other.lt.y)),
             Point(max(self.rb.x, other.rb.x), max(self.rb.y, other.rb.y)),
         )
+
+    def __add__(self, point: Point) -> "Rect":
+        return Rect(lt=self.lt + point, rb=self.rb + point)
+
+    def __sub__(self, point: Point) -> "Rect":
+        return Rect(lt=self.lt - point, rb=self.rb - point)
 
     @staticmethod
     def parseRelative(string: str, imageSize: tuple[int, int]) -> Option["Rect"]:
@@ -128,12 +143,17 @@ class Object:
 
         return Object(rect, int(category))
 
-    def toDb(self, roll_id: str, meter: float, categories: Sequence[str] = ("common", "misc", "stripe")):
+    def toDb(
+        self,
+        roll_id: str,
+        meter: float,
+        categories: Sequence[str] = ("common", "misc", "stripe"),
+    ):
         return {
             "meter": meter,
             "roll_id": roll_id,
             "category": categories[self.category],
-            "box": self.box.toPostgresBox()
+            "box": self.box.toPostgresBox(),
         }
 
 

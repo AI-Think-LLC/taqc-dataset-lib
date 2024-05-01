@@ -30,8 +30,11 @@ class Point(NamedTuple):
     x: int
     y: int
 
-    def __sub__(self, rhs):
+    def __sub__(self, rhs: "Point") -> "Point":
         return Point(self.x - rhs.x, self.y - rhs.y)
+
+    def __add__(self, rhs: "Point") -> "Point":
+        return Point(self.x + rhs.x, self.y + rhs.y)
 
 
 def convert_coords(coords, img_size):
