@@ -74,8 +74,9 @@ class Rect(NamedTuple):
     def toCocoBounds(self) -> tuple[int, int, int, int]:
         return self.lt.x, self.lt.y, self.size.width, self.size.height
 
-    def toPostgresBox(self):
-        return f"({self.lt.x}, {self.lt.y}), ({self.rb.x}, {self.rb.y})"
+    def toPostgresBox(self, image_size: Size):
+        width, height = image_size
+        return f"({self.lt.x / width}, {self.lt.y / height}), ({self.rb.x / width}, {self.rb.y / height})"
 
     def __or__(self, other: "Rect") -> "Rect":
         return Rect(
