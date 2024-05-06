@@ -148,13 +148,14 @@ class Object:
         self,
         roll_id: str,
         meter: float,
+        image_size: Size,
         categories: Sequence[str] = ("common", "misc", "stripe"),
     ):
         return {
             "meter": meter,
             "roll_id": roll_id,
             "category": categories[self.category],
-            "box": self.box.toPostgresBox(),
+            "box": self.box.toPostgresBox(image_size),
         }
 
 
