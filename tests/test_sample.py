@@ -37,6 +37,15 @@ class TestDedupe:
 
         assert sample == createSampleFromRects(Rect(Point(0, 0), Point(6, 8)))
 
+    def test_real(self):
+        sample = createSampleFromRects(
+            Rect.invariant(Point(x=2633, y=1146), Point(x=2405, y=913)),
+            Rect.invariant(Point(x=2632, y=1149), Point(x=2406, y=915)),
+            Rect.invariant(Point(x=2631, y=1143), Point(x=2407, y=914))
+        )
+
+        assert sample.dedupe().objects == Block([Object(Rect(Point(2405, 913), Point(2633, 1149)), 0)])
+
 
 def test_count_false():
     trueObjects = Block(

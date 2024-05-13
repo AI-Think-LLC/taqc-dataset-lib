@@ -120,13 +120,20 @@ class Rect(NamedTuple):
         return Rect(lt, Point(lt.x + size.width, lt.y + size.height))
 
     @staticmethod
+    def invariant(p1: Point, p2: Point):
+        return Rect(
+            Point(min(p1.x, p2.x), min(p1.y, p2.y)),
+            Point(max(p1.x, p2.x), max(p1.y, p2.y))
+        )
+
+    @staticmethod
     def fromCoco(bounds: Sequence[int]):
         w: int = bounds[2]
         h: int = bounds[3]
         x: int = bounds[0] - w // 2
         y: int = bounds[1] - h // 2
 
-        return Rect(Point(x, x + w), Point(y, y + h))
+        return Rect.invariant(Point(x, y), Point(x + w, y + h))
 
     @staticmethod
     def fromTfTensor(tfTensor: TFTensor) -> "Rect":
