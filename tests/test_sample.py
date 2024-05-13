@@ -1,8 +1,7 @@
-from typing import Iterable
-from taqc.dataset import Rect, Point, Sample
 from PIL import Image
 from expression.collections import Block
 
+from taqc.dataset import Rect, Point, Sample
 from taqc.dataset.rect import Object
 
 EMPTY_IMAGE = Image.new("RGB", (0, 0))

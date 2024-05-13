@@ -18,7 +18,7 @@ class Sample:
 
     @staticmethod
     def read(
-        dataset_path: str, filename: str, image_folder="images", label_folder="labels"
+            dataset_path: str, filename: str, image_folder="images", label_folder="labels"
     ) -> "Sample":
         basename, _ = os.path.splitext(filename)
         image = Image.open(f"{dataset_path}/raw/{image_folder}/{filename}")
@@ -75,7 +75,7 @@ class Sample:
         return Sample(image, Block.empty())
 
     def rndDefects(
-        self, tileSize: Size, categories: Container[int] | None = None
+            self, tileSize: Size, categories: Container[int] | None = None
     ) -> Block["Sample"]:
         imageSize = Size(*self.image.size)
         return self.objects.filter(
@@ -100,21 +100,22 @@ class Sample:
             },
         }
 
-    def dedupe(self) -> "Sample":
-        result: list[Object] = []
+    def dedupe(self, tolerance=2) -> "Sample":
+        def mergeStep(results: list[Object], object: Object):
+            for i, existing_obj in enumerate(results):
+                match object.merge(existing_obj, tolerance=tolerance):
+                    case Some(merged):
+                        results[i] = merged
+                        return results
+
+            results.append(object)
+            return results
+
+        results: list[Object] = []
         for obj in self.objects:
-            merged = False
-            for i, existing_obj in enumerate(result):
-                match obj.merge(existing_obj):
-                    case Some(merged_obj):
-                        result[i] = merged_obj
-                        merged = True
-                        break
+            mergeStep(results, obj)
 
-            if not merged:
-                result.append(obj)
-
-        return dataclasses.replace(self, objects=Block(result))
+        return dataclasses.replace(self, objects=Block(results))
 
     def count_false(self, trueObjects: Iterable[Object]):
         """возвращает кортеж FN и FP"""
@@ -124,7 +125,7 @@ class Sample:
         def detected(obj: Object):
             for predicted in self.objects:
                 if predicted.category == obj.category and predicted.box.overlaps(
-                    obj.box
+                        obj.box
                 ):
                     overlapped.add(predicted)
                     return True

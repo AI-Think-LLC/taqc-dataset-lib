@@ -49,6 +49,15 @@ def convert_coords(coords, img_size):
 CropBox = tuple[int, int, int, int]
 
 
+def clamp(x: float, minimum: float = 0, maximum: float = 1) -> float:
+    if x < minimum:
+        return minimum
+    elif x > maximum:
+        return maximum
+    else:
+        return x
+
+
 def getCropBox(shot: ShotInfo) -> Option[CropBox]:
     match shot:
         case (0, "подкладочная_таффета_белый"):

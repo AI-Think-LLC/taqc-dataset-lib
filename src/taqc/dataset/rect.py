@@ -5,13 +5,13 @@ from typing import (
     Iterable,
     NamedTuple,
     Protocol,
-    TypedDict,
-    Container,
     Sequence,
 )
+
 from expression import Nothing, Option, Some, effect
-from expression.collections import Seq, Block
-from .common import Point, Size, convert_coords, rndWinPos, CropBox
+from expression.collections import Block
+
+from .common import Point, Size, convert_coords, rndWinPos, CropBox, clamp
 
 
 class TFTensor(Iterable[float], Protocol):
@@ -38,19 +38,20 @@ class Rect(NamedTuple):
     def size(self) -> Size:
         return Size(self.rb.x - self.lt.x, self.rb.y - self.lt.y)
 
+    @property
+    def center(self) -> tuple[float, float]:
+        return (self.lt.x + self.rb.x) / 2, (self.lt.y + self.rb.y) / 2
+
     def toTuple(self):
         return *self.lt, *self.rb
 
     def contain(self, point: Point):
         return (self.lt.x <= point.x <= self.rb.x) and (
-            self.lt.y <= point.y <= self.rb.y
+                self.lt.y <= point.y <= self.rb.y
         )
 
     def overlaps(self, rhs: "Rect"):
-        def containAny(lhs: "Rect", other: "Rect"):
-            return any(Seq.of(other.lt, other.rb, other.rt, other.lb).map(lhs.contain))
-
-        return containAny(self, rhs) or containAny(rhs, self)
+        return self.distance(rhs) <= 0
 
     def adjustToBoundaries(self, size) -> Option["Rect"]:
         MIN_SIZE = 2
@@ -76,7 +77,21 @@ class Rect(NamedTuple):
 
     def toPostgresBox(self, image_size: Size):
         width, height = image_size
-        return f"({self.lt.x / width}, {self.lt.y / height}), ({self.rb.x / width}, {self.rb.y / height})"
+        return f"({clamp(self.lt.x / width)}, {clamp(self.lt.y / height)})," + \
+            f"({clamp(self.rb.x / width)}, {clamp(self.rb.y / height)})"
+
+    def distance(self, other: "Rect") -> int:
+        x1, y1 = self.center
+        w1, h1 = self.size
+        x2, y2 = other.center
+        w2, h2 = other.size
+
+        return int(
+            max(
+                abs(x1 - x2) - (w1 + w2) / 2,
+                abs(y1 - y2) - (h1 + h2) / 2,
+            )
+        )
 
     def __or__(self, other: "Rect") -> "Rect":
         return Rect(
@@ -130,8 +145,8 @@ class Object:
     def updateRect(self, updater: Callable[[Rect], Rect]) -> "Object":
         return Object(updater(self.box), self.category)
 
-    def merge(self, other: "Object") -> Option["Object"]:
-        if self.category != other.category or not self.box.overlaps(other.box):
+    def merge(self, other: "Object", tolerance=2) -> Option["Object"]:
+        if self.category != other.category or self.box.distance(other.box) > tolerance:
             return Nothing
 
         return Some(Object(self.box | other.box, self.category))
@@ -145,11 +160,11 @@ class Object:
         return Object(rect, int(category))
 
     def toDb(
-        self,
-        roll_id: str,
-        meter: float,
-        image_size: Size,
-        categories: Sequence[str] = ("common", "misc", "stripe"),
+            self,
+            roll_id: str,
+            meter: float,
+            image_size: Size,
+            categories: Sequence[str] = ("common", "misc", "stripe"),
     ):
         return {
             "meter": meter,
