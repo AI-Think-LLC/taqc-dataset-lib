@@ -103,10 +103,15 @@ class Sample:
     def dedupe(self, tolerance=2) -> "Sample":
         def mergeStep(results: list[Object], object: Object):
             for i, existing_obj in enumerate(results):
-                match object.merge(existing_obj, tolerance=tolerance):
-                    case Some(merged):
-                        results[i] = merged
-                        return results
+                merged = object.merge(existing_obj, tolerance=tolerance)
+                if merged.is_some():
+                    results[i] = merged.value
+                    return results
+
+                # match object.merge(existing_obj, tolerance=tolerance):
+                #     case Some(value=merged):
+                #         results[i] = merged
+                #         return results
 
             results.append(object)
             return results
