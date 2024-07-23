@@ -4,7 +4,6 @@ import os
 from random import randint
 from typing import Container, Iterable
 from PIL import Image, ImageDraw
-from expression import Option, Some
 from expression.collections import Block, Seq
 from more_itertools import take
 from .rect import rndCropIncludingRect, Rect, Object
@@ -18,7 +17,7 @@ class Sample:
 
     @staticmethod
     def read(
-            dataset_path: str, filename: str, image_folder="images", label_folder="labels"
+        dataset_path: str, filename: str, image_folder="images", label_folder="labels"
     ) -> "Sample":
         basename, _ = os.path.splitext(filename)
         image = Image.open(f"{dataset_path}/raw/{image_folder}/{filename}")
@@ -38,7 +37,10 @@ class Sample:
         image_copy = self.image.copy()
         draw = ImageDraw.Draw(image_copy)
         for obj in self.objects:
-            draw.rectangle((*obj.box.lt, *obj.box.rb), outline=outlines[obj.category])  # type: ignore
+            draw.rectangle(
+                (*obj.box.lt, *obj.box.rb),  # type: ignore
+                outline=outlines[obj.category],
+            )
         return image_copy
 
     def crop(self, cropBox: tuple[int, int, int, int]):
@@ -75,7 +77,7 @@ class Sample:
         return Sample(image, Block.empty())
 
     def rndDefects(
-            self, tileSize: Size, categories: Container[int] | None = None
+        self, tileSize: Size, categories: Container[int] | None = None
     ) -> Block["Sample"]:
         imageSize = Size(*self.image.size)
         return self.objects.filter(
@@ -108,11 +110,6 @@ class Sample:
                     results[i] = merged.value
                     return results
 
-                # match object.merge(existing_obj, tolerance=tolerance):
-                #     case Some(value=merged):
-                #         results[i] = merged
-                #         return results
-
             results.append(object)
             return results
 
@@ -130,7 +127,7 @@ class Sample:
         def detected(obj: Object):
             for predicted in self.objects:
                 if predicted.category == obj.category and predicted.box.overlaps(
-                        obj.box
+                    obj.box
                 ):
                     overlapped.add(predicted)
                     return True

@@ -1,10 +1,8 @@
 [project]
 name = "taqc"
-version = "0.3.2"
+version = "0.4.0"
 description = ""
-authors = [
-    {name = "Day Tripper", email = "kekovdom@gmail.com"},
-]
+authors = [{ name = "Day Tripper", email = "kekovdom@gmail.com" }]
 dependencies = [
     "more-itertools>=10.2.0",
     "pillow<10.3.0",
@@ -13,7 +11,7 @@ dependencies = [
 ]
 requires-python = ">=3.10"
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 [build-system]
 requires = ["hatchling"]
@@ -22,3 +20,9 @@ build-backend = "hatchling.build"
 
 [tool.pdm]
 distribution = true
+
+
+[tool.pyright]
+executionEnvironments = [{ root = "." }]
+venvPath = "."
+venv = ".venv"

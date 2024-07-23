@@ -11,7 +11,7 @@ from typing import (
 from expression import Nothing, Option, Some, effect
 from expression.collections import Block
 
-from .common import Point, Size, convert_coords, rndWinPos, CropBox, clamp
+from .common import CropBox, Point, Size, clamp, convert_coords, rndWinPos
 
 
 class TFTensor(Iterable[float], Protocol):
@@ -47,7 +47,7 @@ class Rect(NamedTuple):
 
     def contain(self, point: Point):
         return (self.lt.x <= point.x <= self.rb.x) and (
-                self.lt.y <= point.y <= self.rb.y
+            self.lt.y <= point.y <= self.rb.y
         )
 
     def overlaps(self, rhs: "Rect"):
@@ -77,8 +77,10 @@ class Rect(NamedTuple):
 
     def toPostgresBox(self, image_size: Size):
         width, height = image_size
-        return f"({clamp(self.lt.x / width)}, {clamp(self.lt.y / height)})," + \
-            f"({clamp(self.rb.x / width)}, {clamp(self.rb.y / height)})"
+        return (
+            f"({clamp(self.lt.x / width)}, {clamp(self.lt.y / height)}),"
+            + f"({clamp(self.rb.x / width)}, {clamp(self.rb.y / height)})"
+        )
 
     def distance(self, other: "Rect") -> int:
         x1, y1 = self.center
@@ -123,7 +125,7 @@ class Rect(NamedTuple):
     def invariant(p1: Point, p2: Point):
         return Rect(
             Point(min(p1.x, p2.x), min(p1.y, p2.y)),
-            Point(max(p1.x, p2.x), max(p1.y, p2.y))
+            Point(max(p1.x, p2.x), max(p1.y, p2.y)),
         )
 
     @staticmethod
@@ -166,22 +168,18 @@ class Object:
 
         return Object(rect, int(category))
 
-    def toDb(
-            self,
-            roll_id: str,
-            meter: float,
-            image_size: Size,
-            categories: Sequence[str] = ("common", "misc", "stripe"),
+    def toJson(
+        self,
+        image_size: Size,
+        categories: Sequence[str] = ("defect", "hole", "misc", "stripe"),
     ):
         return {
-            "meter": meter,
-            "roll_id": roll_id,
             "category": categories[self.category],
             "box": self.box.toPostgresBox(image_size),
         }
 
 
-@effect.option[CropBox]()
+@effect.option[CropBox]()  # type: ignore
 def rndCropIncludingRect(imageSize: Size, rect: Rect, winSize: Size):
     x = yield from rndWinPos(imageSize.width, rect.lt.x, rect.size.width, winSize.width)
     y = yield from rndWinPos(
@@ -192,6 +190,7 @@ def rndCropIncludingRect(imageSize: Size, rect: Rect, winSize: Size):
 
 def objects_from_ann(ann: Any):
     return tuple(
-        Object(category=category, box=Rect.fromSize(Point(*box[:2]), Size(*box[2:])))
+        Object(category=category, box=Rect.fromSize(
+            Point(*box[:2]), Size(*box[2:])))
         for box, category in zip(ann["objects"]["bbox"], ann["objects"]["category"])
     )
