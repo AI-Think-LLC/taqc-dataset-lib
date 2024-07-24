@@ -32,14 +32,14 @@ class Sample:
         )
 
     def displayRects(self):
-        outlines = ("red", "blue", "green")
+        outlines = ("red", "blue", "green", "yellow", "violet", "lime", "darkslateblue")
 
         image_copy = self.image.copy()
         draw = ImageDraw.Draw(image_copy)
         for obj in self.objects:
             draw.rectangle(
                 (*obj.box.lt, *obj.box.rb),  # type: ignore
-                outline=outlines[obj.category],
+                outline=outlines[obj.category % len(outlines)],
             )
         return image_copy
 
