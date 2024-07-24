@@ -15,3 +15,9 @@ def test_cropbox():
         1984,
         1296,
     )
+
+
+def test_cropbox_additional():
+    assert ShotInfo.fromFilename("dd257ce0-1032_c1_abcdef.jpg").bind(
+        lambda x: getCropBox(x, {"abcdef": ((0, 0, 0, 0), (1, 1, 1, 1))})
+    ).value == (1, 1, 1, 1)

@@ -80,11 +80,17 @@ class Sample:
         self, tileSize: Size, categories: Container[int] | None = None
     ) -> Block["Sample"]:
         imageSize = Size(*self.image.size)
-        return self.objects.filter(
-            lambda obj: obj.category in categories if categories is not None else True
-        ).choose(
-            lambda obj: rndCropIncludingRect(imageSize, obj.box, tileSize).map(
-                self.crop
+        filteredSelf = (
+            dataclasses.replace(
+                self, objects=self.objects.filter(lambda x: x.category in categories)
+            )
+            if categories is not None
+            else self
+        )
+
+        return filteredSelf.objects.choose(
+            lambda x: rndCropIncludingRect(imageSize, x.box, tileSize).map(
+                filteredSelf.crop
             )
         )
 
