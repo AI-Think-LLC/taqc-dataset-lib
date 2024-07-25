@@ -171,7 +171,7 @@ class Object:
     def toJson(
         self,
         image_size: Size,
-        categories: Sequence[str] = ("defect", "hole", "misc", "stripe"),
+        categories: Sequence[str] = ("common", "hole", "misc", "stripe"),
     ):
         return {
             "category": categories[self.category],

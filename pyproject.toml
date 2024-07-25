@@ -1,6 +1,6 @@
 [project]
 name = "taqc"
-version = "0.4.2"
+version = "0.4.3"
 description = ""
 authors = [{ name = "Day Tripper", email = "kekovdom@gmail.com" }]
 dependencies = [
