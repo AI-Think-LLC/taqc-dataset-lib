@@ -41,10 +41,12 @@ class TestDedupe:
         sample = createSampleFromRects(
             Rect.invariant(Point(x=2633, y=1146), Point(x=2405, y=913)),
             Rect.invariant(Point(x=2632, y=1149), Point(x=2406, y=915)),
-            Rect.invariant(Point(x=2631, y=1143), Point(x=2407, y=914))
+            Rect.invariant(Point(x=2631, y=1143), Point(x=2407, y=914)),
         )
 
-        assert sample.dedupe().objects == Block([Object(Rect(Point(2405, 913), Point(2633, 1149)), 0)])
+        assert sample.dedupe().objects == Block(
+            [Object(Rect(Point(2405, 913), Point(2633, 1149)), 0)]
+        )
 
 
 def test_count_false():
@@ -64,3 +66,10 @@ def test_count_false():
     )
 
     assert predict.count_false(trueObjects) == (1, 2)
+
+
+def test_from_internal():
+    json = [{"box": [0, 0, 2, 2], "category": 0}, {"box": [1, 1, 3, 3], "category": 1}]
+    sample = Sample.fromInternalJson(json)
+    assert sample.objects[0] == Object(Rect(Point(0, 0), Point(2, 2)), 0)
+    assert sample.objects[1] == Object(Rect(Point(1, 1), Point(3, 3)), 1)

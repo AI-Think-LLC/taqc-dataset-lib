@@ -10,6 +10,9 @@ from .rect import rndCropIncludingRect, Rect, Object
 from .common import Point, Size
 
 
+EMPTY_IMAGE = Image.new("RGB", (0, 0))
+
+
 @dataclass
 class Sample:
     image: Image.Image
@@ -32,7 +35,8 @@ class Sample:
         )
 
     def displayRects(self):
-        outlines = ("red", "blue", "green", "yellow", "violet", "lime", "darkslateblue")
+        outlines = ("red", "blue", "green", "yellow",
+                    "violet", "lime", "darkslateblue")
 
         image_copy = self.image.copy()
         draw = ImageDraw.Draw(image_copy)
@@ -65,7 +69,8 @@ class Sample:
                 x0 = randint(0, self.image.size[0] - tileSize.width)
                 y0 = randint(0, self.image.size[1] - tileSize.height)
                 yield Rect(
-                    Point(x0, y0), Point(x0 + tileSize.width, y0 + tileSize.height)
+                    Point(x0, y0), Point(
+                        x0 + tileSize.width, y0 + tileSize.height)
                 )
 
         image = next(
@@ -82,7 +87,8 @@ class Sample:
         imageSize = Size(*self.image.size)
         filteredSelf = (
             dataclasses.replace(
-                self, objects=self.objects.filter(lambda x: x.category in categories)
+                self, objects=self.objects.filter(
+                    lambda x: x.category in categories)
             )
             if categories is not None
             else self
@@ -143,3 +149,12 @@ class Sample:
         falsePositive = sum(1 for obj in self.objects if obj not in overlapped)
 
         return falseNegative, falsePositive
+
+    @staticmethod
+    def fromInternalJson(json):
+        return Sample(
+            EMPTY_IMAGE,
+            Block(json).map(
+                lambda d: Object(Rect.fromTfTensor(d["box"]), d["category"])
+            ),
+        )
